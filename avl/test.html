@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>测试二叉树</title>
+    <style>
+        body{
+            width: 80%;
+            margin: 20px auto
+        }
+        .default-button{
+            padding: 8px 15px;
+            border-radius: 4px;
+            background: dodgerblue;
+            color: #fff;
+            border:0;
+            cursor: pointer;
+            vertical-align: middle;
+        }
+        .lmr15{
+            margin-left: 15px;
+        }
+        .tmr8{
+            margin-top: 8px;
+        }
+        input{
+            padding: 5px 10px;
+        }
+        .list{
+            padding: 10px 0;
+        }
+        .node-list{
+            text-align: center;
+            padding-bottom: 6px;
+        }
+        .node{
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ccc;
+            border-radius: 15px;
+            text-align: center;
+            line-height: 30px;
+            vertical-align: middle;
+            background: #f1f1f1;
+            margin: 0 5px;
+        }
+        .tab{
+            display: inline-block;
+            padding: 6px 15px;
+            background: #f1f1f1;
+            cursor: pointer;
+        }
+        .tab.active{
+            background: dodgerblue;
+        }
+        .mini-input{
+            width: 60px
+        }
+        #prompt-box{
+            position: fixed;
+            top:0;
+            bottom:0;
+            left:0;
+            right:0;
+        }
+        #prompt-body{
+            background: rgba(50,50,50,.8);
+            color: #fff;
+            padding: 8px 20px 10px;
+            max-width: 300px;
+            border-radius: 5px;
+            position: absolute;
+            top:50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+<body>
+<div class="list">
+    <label>数据：</label><input id="data-input" placeholder="数据间用逗号隔开" type="text">
+    <button class="default-button lmr15" onclick="manuallyImport()">手动导入</button>
+    <button class="default-button lmr15" onclick="randomCreate()">随机生成</button>
+</div>
+<div class="list">
+    <div>原始数据：<span id="init-data"></span></div>
+    <div class="tmr8">
+        <button class="default-button" onclick="createTree()">生成二叉树</button>
+        <button class="default-button lmr15" onclick="createTreeOneByOne()">逐个生产二叉树</button>
+    </div>
+    <div class="tmr8">
+        <input id="add-value" class="mini-input" type="text"><button class="default-button lmr15" onclick="addNode()">添加节点</button>
+        <input id="remove-value" class="mini-input lmr15" type="text"><button class="default-button lmr15" onclick="removeNode()">删除节点</button>
+    </div>
+</div>
+<div class="list">
+    <div>二叉树：<div class="tab active" onclick="showBSTTree(this)">bst</div><div class="tab" onclick="showAVLTree(this)">avl</div></div>
+    <div id="tree">
+        <canvas id="bst-tree"></canvas>
+        <canvas id="avl-tree" style="display:none"></canvas>
+    </div>
+</div>
+<div id="prompt-box" style="display: none;">
+    <div id="prompt-body"></div>
+</div>
+<script src="http://code.jquery.com/jquery-2.0.0.min.js"></script>
+<script src="renderer.js"></script>
+<script src="base.js"></script>
+<script src="bst.js"></script>
+<script src="avl.js"></script>
+<script>
+    let oringinData = []
+    let tab = 'bst'
+    function manuallyImport() {
+        let str = $('#data-input').val()
+        $('#init-data').text(str)
+        oringinData = str.split(',').map((val) => Number(val))
+    }
+    function randomCreate() {
+        let originArr = []
+        for(let i=0; i<100; i++) {
+            originArr.push(i)
+        }
+        let res = []
+        while (res.length < 31) {
+            res.push(...originArr.splice(Math.floor(Math.random()*originArr.length), 1))
+        }
+        $('#init-data').text(res.toString())
+        oringinData = res
+    }
+    let avlTree = new AVLTree(), bstTree = new BSTTree(), avlRenderer, bstRenderer
+    function renderBSTTree() {
+        if (!bstRenderer) {
+            bstRenderer = new Renderer('bst-tree', bstTree)
+        }
+        bstRenderer.renderTree()
+    }
+    function renderAVLTree() {
+        if (!avlRenderer) {
+            avlRenderer = new Renderer('avl-tree', avlTree)
+        }
+        avlRenderer.renderTree()
+    }
+    function createTree() {
+        if (oringinData.length === 0) {
+            showPrompt('请先生成数据')
+        }
+        switch (tab) {
+            case 'bst':
+                bstTree = new BSTTree()
+                oringinData.forEach((val) => {
+                    bstTree.add(val)
+                })
+                renderBSTTree()
+                break
+            case 'avl':
+                avlTree = new AVLTree()
+                oringinData.forEach((val) => {
+                    avlTree.add(val)
+                })
+                renderAVLTree()
+        }
+    }
+    function createTreeOneByOne() {
+        if (oringinData.length === 0) {
+            return showPrompt('请先生成数据')
+        }
+        switch (tab) {
+            case 'bst':
+                if (bstTree.length === oringinData.length) {
+                    return showPrompt('数据已全部生成')
+                }
+                if (!bstTree) bstTree = new BSTTree()
+                bstTree.add(oringinData[bstTree.length])
+                renderBSTTree()
+                break
+            case 'avl':
+                if (avlTree.length === oringinData.length) {
+                    return showPrompt('数据已全部生成')
+                }
+                if (!avlTree) avlTree = new AVLTree()
+                avlTree.add(oringinData[avlTree.length])
+                renderAVLTree()
+        }
+
+    }
+    function removeNode() {
+        let val = Number($('#remove-value').val())
+        if (isNaN(val)) {
+            showPrompt('输入的格式有误')
+        } else{
+            let index = oringinData.indexOf(val)
+            if (index < 0) {
+                showPrompt('二叉树没有要删除的数据')
+            } else {
+                oringinData.splice(index, 1)
+                switch (tab) {
+                    case 'bst':
+                        bstTree.remove(val)
+                        renderBSTTree()
+                        break
+                    case 'avl':
+                        avlTree.remove(val)
+                        renderAVLTree()
+                }
+            }
+        }
+    }
+    function addNode() {
+        let val = Number($('#add-value').val())
+        if (isNaN(val)) {
+            showPrompt('输入的格式有误')
+        } else{
+            let index = oringinData.indexOf(val)
+            if (index >= 0) {
+                showPrompt('此节点已存在')
+            } else {
+                oringinData.push(val)
+                switch (tab) {
+                    case 'bst':
+                        bstTree.add(val)
+                        renderBSTTree()
+                        break
+                    case 'avl':
+                        avlTree.add(val)
+                        renderAVLTree()
+                }
+            }
+        }
+    }
+    function showBSTTree(ele) {
+        $('#bst-tree').show()
+        $('#avl-tree').hide()
+        $(ele).addClass('active').siblings('.tab').removeClass('active')
+        tab = 'bst'
+    }
+    function showAVLTree(ele) {
+        $('#avl-tree').show()
+        $('#bst-tree').hide()
+        $(ele).addClass('active').siblings('.tab').removeClass('active')
+        tab = 'avl'
+    }
+    let promptTimeout
+    function showPrompt(text) {
+        $('#prompt-body').text(text)
+        $('#prompt-box').show()
+        if (promptTimeout) clearTimeout(promptTimeout)
+        promptTimeout = setTimeout(() => {
+            $('#prompt-box').hide()
+        }, text.length * 150)
+    }
+</script>
+</body>
+</html>
